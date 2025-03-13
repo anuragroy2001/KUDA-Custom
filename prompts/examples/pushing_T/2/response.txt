@@ -1,0 +1,9 @@
+To form a "UT" shape, we need to move the "T" shape to the right of the "U" shape. We can use the keypoints on the "U" as reference points and use P1, P2 to determine the pose of the T shape.
+Here is a Python function that specifies the final positions of the keypoints on the "T" relative to the keypoints on the "U":
+```python
+def keypoint_specification():
+    p1 = p4 + [5, 0, 0]
+    p2 = p8 + [11, 0, 0] # The half width of the "T" shape is 6cm
+    return p1, p2
+```
+This will move the "T" shape to the right of the "U" shape, forming the "UT" shape.

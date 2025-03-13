@@ -1,0 +1,28 @@
+log_dir: &log_dir logs
+
+env:
+  WH: [640, 480]
+  capture_fps: 15
+  obs_fps: 15
+  n_obs_steps: 1
+  process_depth: False
+  use_robot: True
+  verbose: False
+  num_points: 1000
+
+planner:
+  log_dir: *log_dir
+  prompt_fname: low_level_prompt
+  few_shot_prompt_dir: flat_examples
+  target_pcd_file: None
+  temperature: 0.0
+  model: gpt-4o
+  max_tokens: 1024
+  top_down_cam: 2
+  obs_x_center: 310
+  obs_y_center: 196
+  obs_x_scale: 0.6
+  obs_y_scale: 0.42
+  tracking_cam: 0
+  close_loop: True
+  use_retriever: True

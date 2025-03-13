@@ -1,0 +1,25 @@
+Please describe the final state of the object(s) on the table that satisfies the task by selecting some keypoints and writing a Python function to specify their final positions.
+The input request contains:
+1. The task instruction describing what you need to do.
+2. An image of the current table-top environment captured from a top-down camera, overlayed with keypoints marked as P[i].
+
+The response should be a Python function that describes the final spatial relationships between the keypoints of the object(s) you want to manipulate, and some other keypoints in the image.
+The relationship is described by adding a 3D vector to the reference keypoint. For example, if P[i], P[j] are two keypoints on the object, and P[a], P[b] are two other keypoints for reference, the function could be:
+```python
+def keypoint_specification():
+    p_i = p_a + [5, 0, 0]
+    p_j = p_b + [0, 7, 0]
+    return p_i, p_j
+```
+
+Imagine what the object(s) should finally look like after the task is completed, and select proper keypoints and describe their positions by referring to the near keypoints.
+Note:
+- x is left to right, y is bottom to top, z is from inside the image to outside the image, the unit is in cm.
+- Please do not use variables in the 3D vector, follow the format 'p_i = p_a + [dx, dy, dz]'. If there are no proper reference points on the table, you can also use 'p_i = [dx, dy, dz]', while the origin is the center of the image, denoted as C.
+- After your specification, a motion planner will match the chosen keypoints to their targets following a mse loss.
+- You can just specify several necessary keypoints to determine a pose instead of all the keypoints on the object(s) to make things easier.
+- Here are the sizes of some possible items: the side length of the cube is 3cm, the L shape is 9cm in width and 6cm in height, the rope is 40cm in length.
+- Mention not to specify points that are not present in the image.
+- If you think the task has been done, just return "Done."
+
+Next I will show you some examples:

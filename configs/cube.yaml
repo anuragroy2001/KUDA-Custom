@@ -1,0 +1,47 @@
+model:
+  verbose: False
+
+  n_his: 4
+
+  nf_particle: 150
+  nf_relation: 150
+  nf_effect: 150
+  out_dim: 3
+
+  nf_physics_hidden: 20
+  nf_physics: 10
+
+  # particle encoder
+  attr_dim: 2  # object and end effector
+  state_dim: 0  # x, y, z
+  offset_dim: 0
+  action_dim: 3
+  pstep: 3
+  sequence_length: 4
+  density_dim: 0  # particle density
+
+  # rel encoder
+  rel_particle_dim: 0
+  rel_attr_dim: 2
+  rel_group_dim: 1  # sum of difference of group one-hot vector
+  rel_distance_dim: 3
+  rel_density_dim: 0
+
+  # canonical
+  # rel_can_attr_dim: 0
+  # rel_canonical_distance_dim: 0
+  # rel_canonical_attr_dim: 0
+  # rel_canonical_thresh: 0
+
+  # phys encoding
+  use_vae: False
+  phys_encode: False
+
+plan:
+  seed: 42
+  n_actions: 10
+  n_look_ahead: 1
+  n_sample: 20000
+  n_sample_chunk: 500
+  noise_level: 1
+  reward_weight: 500.0

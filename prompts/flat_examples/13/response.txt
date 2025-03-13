@@ -1,0 +1,13 @@
+To make the inequality "23 > 19" true, we need to form a greater-than sign (">") with the rope. We position the rope in a way that it forms an angle pointing to the right.
+
+Here is the Python function to specify the final positions of the keypoints on the rope:
+
+```python
+def keypoint_specification():
+    p4 = [-10, 10, 0]  # Move P4 to the top-left
+    p5 = [-10, -10, 0]  # Move P5 to the bottom-left
+    
+    return p4, p5
+```
+
+This will place the keypoints in an angle forming a "greater-than" sign (">") between the numbers 23 and 19.

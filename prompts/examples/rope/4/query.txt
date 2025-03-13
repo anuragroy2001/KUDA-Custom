@@ -1,0 +1,1 @@
+move the ends of the rope to form a less-than or a greater-than sign to make the inequality true

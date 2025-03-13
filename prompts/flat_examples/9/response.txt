@@ -1,0 +1,12 @@
+To form the word "ROBOT," we need to move the "T" shape to the right of the "O" shape. We can use the keypoints on the "O" as reference points and use P2, P4 at the top of the T shape to determine the pose of the T shape.
+
+Here is a Python function that specifies the final positions of the keypoints on the "T" relative to the keypoints on the "O":
+
+```python
+def keypoint_specification():
+    p4 = p6 + [5, 3, 0]
+    p2 = p6 + [17, 3, 0] # The width of the "T" shape is 12cm
+    return p2, p4
+```
+
+This will move the "T" shape to the right of the "O" shape, forming the word "ROBOT."

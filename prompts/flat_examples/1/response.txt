@@ -1,0 +1,15 @@
+Here is the Python function to specify the final positions of the keypoints:
+
+```python
+def keypoint_specification():
+    p1 = p2 + [0, 0, 0]
+    p3 = p2 + [0, 0, 0]
+    p4 = p2 + [0, 0, 0]
+    p5 = p2 + [0, 0, 0]
+    p6 = p2 + [0, 0, 0]
+    p7 = p2 + [0, 0, 0]
+    
+    return p1, p3, p4, p5, p6, p7
+```
+
+This will move all the keypoints of the coffee beans to the red position marked by P2.

@@ -1,0 +1,9 @@
+.vscode
+*.pyc
+*.pth
+*.pkl
+cache/
+test/
+experiment_records/
+logs/
+GroundingDINO/

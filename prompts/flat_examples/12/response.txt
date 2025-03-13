@@ -1,0 +1,14 @@
+To form a "less-than" sign ("<") with the rope to describe the relationship between 1 and 2, we need to position the rope in a way that it forms an angle pointing to the left.
+
+Here is the Python function to specify the final positions of the keypoints on the rope:
+
+```python
+def keypoint_specification():
+    p8 = [0, -8, 0] # Move P8 slightly up
+    p9 = [0, 8, 0]   # Move P9 slightly down
+    p10 = [-8, 0, 0]  # Move P10 to the left
+    
+    return p8, p9, p10
+```
+
+This will place the keypoints in an angle forming a "less-than" sign ("<") between the numbers 1 and 2.

@@ -1,0 +1,15 @@
+To collect the coffee beans to the center of the square, we can specify the keypoints of the coffee beans to be near the center of the square, which is approximately at P11. Here is the Python function to specify the final positions of the keypoints:
+
+```python
+def keypoint_specification():
+    p2 = p11 + [0, 0, 0]
+    p12 = p11 + [0, 0, 0]
+    p14 = p11 + [0, 0, 0]
+    p16 = p11 + [0, 0, 0]
+    p17 = p11 + [0, 0, 0]
+    p19 = p11 + [0, 0, 0]
+    
+    return p2, p12, p14, p16, p17, p19
+```
+
+This will move all the keypoints of the coffee beans to the center of the square marked by P11.

@@ -1,0 +1,12 @@
+To form an "NT" shape, we need to move the "T" shape to the right of the "N" shape. We can use the keypoints on the "N" as reference points and use P3, P2 at the top of T shape to determine the pose of the T shape.
+
+Here is a Python function that specifies the final positions of the keypoints on the "T" relative to the keypoints on the "N":
+
+```python
+def keypoint_specification():
+    p3 = p7 + [5, 0, 0]
+    p2 = p7 + [17, 0, 0] # The width of the "T" shape is 12cm
+    return p3, p2
+```
+
+This will move the "T" shape to the right of the "N" shape, forming the "NT" shape.

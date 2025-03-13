@@ -1,0 +1,15 @@
+To align the cubes on a line, we will place them along the x-axis, centered around the origin (C). To make the movements as little as possible, we will arrange cubes from left to right. Here is the Python function to specify the final positions of the keypoints:
+
+```python
+def keypoint_specification():
+    # Align cubes along the x-axis
+    p4 = [-20, 0, 0]
+    p3 = [-10, 0, 0]
+    p1 = [0, 0, 0]
+    p2 = [10, 0, 0]
+    p5 = [20, 0, 0]
+
+    return p1, p2, p3, p4, p5
+```
+
+This function will align the cubes in a straight line along the x-axis, centered around the origin.

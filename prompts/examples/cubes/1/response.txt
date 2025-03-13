@@ -1,0 +1,24 @@
+To divide the cubes into two groups based on their color, according to their distribution, we will gather the red cubes in the left side of the image and the green cubes in the right side of the image. Here is the Python function to specify the final positions of the keypoints:
+
+```python
+def keypoint_specification():
+    # Move red cubes to the left
+    p1 = [-20, 0, 0]
+    p3 = [-20, 0, 0]
+    p4 = [-20, 0, 0]
+    p7 = [-20, 0, 0]
+    p9 = [-20, 0, 0]
+    p12 = [-20, 0, 0]
+
+    # Move green cubes to the right
+    p2 = [20, 0, 0]
+    p5 = [20, 0, 0]
+    p6 = [20, 0, 0]
+    p8 = [20, 0, 0]
+    p10 = [20, 0, 0]
+    p11 = [20, 0, 0]
+
+    return p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12
+```
+
+This function will move the red cubes to the left side and the green cubes to the right side, effectively dividing them into two groups based on their color.
