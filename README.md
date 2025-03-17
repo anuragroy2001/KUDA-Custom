@@ -107,5 +107,14 @@ This repository is released under the [MIT license](LICENSE).
 
 ## 🔭 Citation
 
-```   
+```
+@misc{liu2025kudakeypointsunifydynamics,
+      title={KUDA: Keypoints to Unify Dynamics Learning and Visual Prompting for Open-Vocabulary Robotic Manipulation}, 
+      author={Zixian Liu and Mingtong Zhang and Yunzhu Li},
+      year={2025},
+      eprint={2503.10546},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2503.10546}, 
+}
 ```
