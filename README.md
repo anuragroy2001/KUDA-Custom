@@ -82,7 +82,7 @@ To execute tasks in the real world, please follow these steps:
 
 3. **Robot Execution**:  
 Please ensure the following steps for real world execution:
-   - We employ different end-effctors to manipulate various objects. Specifically, we use the cylinder stick for T shape, ropes, board pusher for cubes and granular pieces. Please update the robot setup in `config/real_config.yaml->planner` and `envs/real_env.py`. Ensure the top-down and side cameras have clear views.
+   - We employ different end-effctors to manipulate various objects. Specifically, we use the cylinder stick for T shape, ropes, board pusher for cubes and granular pieces. You can download them for 3D prints from [here](https://drive.google.com/drive/folders/1wBSx-il4J6r4PgmIzEXyq1-zG61vn-pq?usp=sharing). Please update the robot setup in `config/real_config.yaml->planner` and `envs/real_env.py`. Ensure the top-down and side cameras have clear views.
    - Please change hyperparameters such as `radius` in `planner/planner.py` and `box_threshold` in `perception/models/grounding_dino_wrapper.py` for various objects.
    - Please replace the `api_key` in `launch.py` with your OpenAI API key.
 
