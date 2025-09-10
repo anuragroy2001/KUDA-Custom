@@ -26,6 +26,7 @@ from utils import set_seed, truncate_points
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import time
 
 SIM_REAL_RATIO = 10.
 PUSH_LENGTH = 0.1 # length in simulation
@@ -64,17 +65,28 @@ def step_and_record(env, action, video_recorder):
 
     env.reset_to_default_pose()
     time.sleep(0.5)
-    video_recorder.start()
+    start_time = time.time()
     env.move_to_table_position(x_start, y_start, 0.1, yaw)
     env.move_to_table_position(x_start, y_start, 0.0, yaw)
     time.sleep(0.5)
+    video_recorder.start()
+    end_time = time.time()
+    print("Move to start position took {:.4f} seconds".format(end_time - start_time))
+    time.sleep(0.5)
+    start_time = time.time()
     env.move_to_table_position(x_end, y_end, 0.0, yaw)
     env.move_to_table_position(x_end, y_end, 0.1, yaw)
+    end_time = time.time()
+    print("Move to end position took {:.4f} seconds".format(end_time - start_time))
     time.sleep(0.5)
+    start_time = time.time()
     env.reset_to_default_pose()
+    end_time = time.time()
+    print("Reset to default pose took {:.4f} seconds".format(end_time - start_time))
     if video_recorder.is_alive():
         video_recorder.terminate()
         video_recorder.join()
+
 
 # ============ coordinate transformation ============
 def decoded_action_real_to_sim(action):
@@ -1031,6 +1043,7 @@ def closed_loop_plan(
         track_as_state=True,
         target_pcd=None,
     ):
+    start_time_full = time.time()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     bbox = env.get_bbox()[:2]
@@ -1093,15 +1106,20 @@ def closed_loop_plan(
 
     save_dir = f'{save_dir}/{material}-planning-{time.time()}'
     os.makedirs(save_dir, exist_ok=True)
-
+    start_time = time.time()
     model = DynamicsPredictor(model_config, device)
+    end_time = time.time()
+    print("Total time to initialize Dynamics model: {:.2f} seconds".format(end_time - start_time))
 
     model.to(device)
 
     model.eval()
     model.load_state_dict(ckpt)
-
+    
+    start_time = time.time()
     tracker = SpaTrackerWrapper()
+    end_time = time.time()
+    print("Total time to initialize Spatracker: {:.2f} seconds".format(end_time - start_time))
 
     running_cost_func = partial(running_cost, material=material, target_specification=target_specification)
 
@@ -1143,7 +1161,8 @@ def closed_loop_plan(
                 (action_upper_lim - action_lower_lim) + action_lower_lim
 
     res_act_seq = torch.zeros((n_actions, action_upper_lim.shape[0]), device=device)
-
+    end_time_full = time.time()
+    print("Total time to initialize close loop planner config: {:.2f} seconds".format(end_time_full - start_time_full))
     for i in range(n_actions):
         time1 = time.time()
 
@@ -1218,24 +1237,45 @@ def closed_loop_plan(
         queries = env.world_to_viewport(queries, tracking_cam)
         video_dir = f'{save_dir}/tracking_{i}'
         frames = sorted(glob.glob(os.path.join(video_dir, '*.jpg')))
+        # video = []
+        # for frame in frames:
+        #     img = Image.open(frame)
+        #     img = np.array(img)
+        #     video.append(img)
+        # video = np.stack(video, axis=0)
+        # depths = []
+        # depth_files = sorted(glob.glob(os.path.join(video_dir, '*.png')))
+        # for depth_file in depth_files:
+        #     depth = Image.open(depth_file)
+        #     depth = np.array(depth) / 1000.
+        #     depths.append(depth)
+        # depths = np.stack(depths, axis=0)
+        # video = video[:len(depths)] # sometimes the last depth frame is not saved
+        #get every 10th video element in the video list
+        # for i in range(len(depths)):
+        #     video.append(video[i * 10])  # repeat every 10th frame
+        # video = np.array(video)
+
+        frames = sorted(glob.glob(os.path.join(video_dir, '*.jpg')))[::5]
         video = []
         for frame in frames:
             img = Image.open(frame)
-            img = np.array(img)
-            video.append(img)
+            video.append(np.array(img))
         video = np.stack(video, axis=0)
+
+        # get every 10th depth frame
+        depth_files = sorted(glob.glob(os.path.join(video_dir, '*.png')))[::5]
         depths = []
-        depth_files = sorted(glob.glob(os.path.join(video_dir, '*.png')))
         for depth_file in depth_files:
             depth = Image.open(depth_file)
-            depth = np.array(depth) / 1000.
-            depths.append(depth)
+            depths.append(np.array(depth) / 1000.)
         depths = np.stack(depths, axis=0)
-        video = video[:len(depths)] # sometimes the last depth frame is not saved
+
         pred_tracks, pred_visibility = tracker(video, depths, queries, debug=True, save_dir=video_dir) # pred_tracks: (T, N, 2)
+
         if pred_tracks.ndim == 4:
             pred_tracks = pred_tracks[:, 0]
-
+        start_time = time.time()
         # update state and target
         depth = env.get_rgb_depth_pc()[2][tracking_cam]
         if track_as_state:
@@ -1263,7 +1303,8 @@ def closed_loop_plan(
             target_specification = (new_indices, target_specification[1])
             running_cost_func = partial(running_cost, material=material, target_specification=target_specification)
             planner.evaluate_traj = running_cost_func
-
+        end_time = time.time()
+        print("Total time to update state and target: {:.2f} seconds".format(end_time - start_time))
         # vis
         obs = env.get_rgb_depth_pc()[0][top_down_cam]
         vis_img = view_specification(obs, state_cur, target_specification, intr, extr)

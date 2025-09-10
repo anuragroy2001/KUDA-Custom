@@ -39,7 +39,7 @@ model:
 
 plan:
   seed: 42
-  n_actions: 11
+  n_actions: 3
   n_look_ahead: 1
   n_sample: 20000
   n_sample_chunk: 500

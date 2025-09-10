@@ -7,17 +7,20 @@ import numpy as np
 from copy import deepcopy
 import open3d as o3d
 import cv2
-from xarm.wrapper import XArmAPI
+# from xarm.wrapper import XArmAPI
 from transforms3d.euler import quat2euler, euler2mat
 from utils import pc2voxel, voxel2index
 
 from multiprocessing.managers import SharedMemoryManager
 from envs.real_world.camera.multi_realsense import MultiRealsense, SingleRealsense
 from perception.predictor import GroundingSegmentPredictor
+from scipy.spatial.transform import Rotation as R
+import socket
 
 # Important!!! Check before experiment
 # EE_LENGTH = 0.173 # stick
-EE_LENGTH = 0.104 # pusher
+# EE_LENGTH = 0.104 # pusher
+EE_LENGTH = 0.0 
 Z_PUSHER = -0.062 # the lowest position of the pusher
 # scale between T mesh and the real T
 T_SCALE = 1.0
@@ -33,8 +36,8 @@ class RealEnv:
         self.n_obs_steps = env_config.n_obs_steps
         self.sample_points = env_config.num_points
         # workspace bounds
-        self.workspace_bounds_min = np.array([0.25, -0.3, -0.08])
-        self.workspace_bounds_max = np.array([0.65, 0.3, 0.25])
+        self.workspace_bounds_min = np.array([-1.0, 0.0, 0.0])
+        self.workspace_bounds_max = np.array([0.0, 1.0, 1.0])
 
         self.serial_numbers = SingleRealsense.get_connected_devices_serial()
         print(f'Found {len(self.serial_numbers)} fixed cameras.')
@@ -58,11 +61,19 @@ class RealEnv:
         self.use_robot = env_config.use_robot
 
         if self.use_robot:
+            self.action_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.action_sock.connect(('localhost', 5000))
+
+            self.status_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.status_sock.connect(('localhost', 50005))
             self.initialize_robot()
 
         self.setup_cameras()
 
+        start_time = time.time()
         self.predictor = GroundingSegmentPredictor(show_bbox=False, show_mask=False)
+        end_time = time.time()
+        print(f'GroundingSegmentPredictor initialized in {end_time - start_time:.4f} seconds')
 
     # ======== start-stop API =============
     @property
@@ -101,13 +112,14 @@ class RealEnv:
         self.realsense.start_recording(file_path, start_time=start_time)
 
     def initialize_robot(self):
-        self.robot = XArmAPI('192.168.1.209')
-        self.robot.motion_enable(enable=True)
-        self.robot.set_mode(0)
-        self.robot.set_state(state=0)
-        self.robot_default_pos = [0, -60, -30, 0, 90, 0]
+        print('Initializing robot...')
+        # self.robot = XArmAPI('192.168.1.209')
+        # self.robot.motion_enable(enable=True)
+        # self.robot.set_mode(0)
+        # self.robot.set_state(state=0)
+        # self.robot_default_pos = [0, -60, -30, 0, 90, 0]
         self.reset_to_default_pose()
-        self.recent_target_speed = 0
+        # self.recent_target_speed = 0
 
     def setup_cameras(self):
         # To get good point cloud
@@ -125,10 +137,50 @@ class RealEnv:
         self.camera_threshold.set_option(rs.option.min_distance, 0) # Minimum distance in meters
         self.camera_threshold.set_option(rs.option.max_distance, 3) # Maximum distance in meters (3m)
 
-        camera_to_robot_transforms = pickle.load(open('xarm-calibrate/real_world/calibration_result/camera_to_bases.pkl', 'rb'))
+        # camera_to_robot_transforms = pickle.load(open('xarm-calibrate/real_world/calibration_result/camera_to_bases.pkl', 'rb'))
+        # self.camera_to_robot_transforms = []
+        # for serial in self.serial_numbers:
+        #     self.camera_to_robot_transforms.append(camera_to_robot_transforms[serial])
+        # self.camera_to_robot_transforms = []
+        # t = np.array([-0.65929,  0.72136,  0.85829], dtype=np.float32)
+        # q = np.array([-0.37775, 0.91128, -0.14943, 0.06750], dtype=np.float32)
+        # R_mat = R.from_quat(q).as_matrix().astype(np.float32)
+
+        # T = np.eye(4, dtype=np.float32)
+        # T[:3, :3] = R_mat
+        # T[:3,  3] = t
+
+        # # self.camera_to_robot_transforms = [T]
+        # # if self.serial_numbers has two entries, this makes two copies of T:
+        # self.camera_to_robot_transforms = [T.copy() for _ in self.serial_numbers]
+        # for serial, transform in zip(self.serial_numbers, self.camera_to_robot_transforms):
+        #     print(f"Camera serial: {serial}, Transform:\n{transform}")
+        calibrations = {
+        "151422253661": (  # replace with your first camera’s serial
+            np.array([-0.49387,  0.59460,  0.89782], dtype=np.float32),
+            np.array([-0.37936, 0.92398, -0.04728, 0.01018], dtype=np.float32)
+        ),
+        "151422254605": (  # replace with your second camera’s serial
+            np.array([ -0.99265, 0.72944,  0.35029], dtype=np.float32),
+            np.array([ -0.35501,  0.84646,  -0.37527, 0.12901], dtype=np.float32)
+        ),
+        # add more cameras here if needed…
+    }
+
         self.camera_to_robot_transforms = []
         for serial in self.serial_numbers:
-            self.camera_to_robot_transforms.append(camera_to_robot_transforms[serial])
+            if serial not in calibrations:
+                raise KeyError(f"No calibration found for camera {serial}")
+            t, q = calibrations[serial]
+            R_mat = R.from_quat(q).as_matrix().astype(np.float32)
+
+            T = np.eye(4, dtype=np.float32)
+            T[:3, :3] = R_mat
+            T[:3,  3] = t
+            self.camera_to_robot_transforms.append(T)
+
+            print(f"Camera serial: {serial}, Transform:\n{T}")
+
 
     def get_intrinsic(self, camera_index=0):
         return self.realsense.get_intrinsics()[camera_index]
@@ -320,11 +372,14 @@ class RealEnv:
                 partial_pcds.append(point_cloud)
 
                 # Visualize PointCloud
-                # coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
+                coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
                 # o3d.visualization.draw_geometries([point_cloud, coordinate_frame])
+                #Save as a .ply file to logs
+                # o3d.io.write_point_cloud(f'logs/point_cloud_{i}.ply', point_cloud)
         # use merge if multiple cameras
         # merged_pcds = self._merge_pcd(partial_pcds)
         merged_pcds = partial_pcds
+        # o3d.io.write_point_cloud(f'logs/merged_cloud_{i}.ply', merged_pcds[0])
 
         # filter the points by the workspace bounds
         for i in range(len(merged_pcds)):
@@ -333,6 +388,8 @@ class RealEnv:
         if debug:
             coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
             o3d.visualization.draw_geometries(merged_pcds + [coordinate_frame])
+        
+        o3d.io.write_point_cloud(f'logs/merged_cloud_{i}.ply', merged_pcds[0])
         return merged_pcds
 
     def get_points_by_name(self, query_name, camera_index=None, return_normals=False, num_points=None, fuse=False, debug=False):
@@ -346,8 +403,9 @@ class RealEnv:
         rgb_images, _, depths, _ = self.get_rgb_depth_pc(camera_index=camera_index)
         masks = self.predictor.predict(rgb_images, query_name)
 
-        obj_pcds = self._get_transformed_object_pcd(depths, masks, camera_index=camera_index, debug=debug) # Visualize this point cloud https://chat.openai.com/share/b2405a32-3a8c-47f2-8cee-c387ef6ef5e4
-        
+        print("Visualizing masks for query:", query_name)
+        obj_pcds = self._get_transformed_object_pcd(depths, masks, camera_index=camera_index, debug=False) # Visualize this point cloud https://chat.openai.com/share/b2405a32-3a8c-47f2-8cee-c387ef6ef5e4
+        print(f'Found {len(obj_pcds)} objects for query: {query_name}')
         # Randomly sample 'num_points' points from the point cloud
         for i in range(len(obj_pcds)):
             if num_points is not None and len(obj_pcds[i].points) > num_points:
@@ -363,9 +421,10 @@ class RealEnv:
             else:
                 return [np.concatenate([np.asarray(obj_pcd.points) for obj_pcd in obj_pcds], axis=0)]
 
-        # for T_shape, we use the keypoints to represent each object
+        # for T_shape, we use the keypoints to represent each object, is this correct for wire?
         if 't_shape' in query_name:
             obj_pcds = [self.T_postprocess(obj_pcd) for obj_pcd in obj_pcds]
+            
 
         # for cubes, we use the center to represent each object
         if 'cube' in query_name:
@@ -377,7 +436,7 @@ class RealEnv:
                 return [np.array([np.mean(np.asarray(obj_pcd.points), axis=0) for obj_pcd in obj_pcds])]
 
         # for coffee_beans, we simply fuse all pcds as one object
-        if "coffee_beans" in query_name or "candy" in query_name:
+        if "coffee_beans" in query_name or "candy" in query_name or "cable" in query_name or 'wire' in query_name or 'rope' in query_name:
             if return_normals:
                 for obj_pcd in obj_pcds:
                     obj_pcd.estimate_normals()
@@ -475,28 +534,63 @@ class RealEnv:
         return masks
 
     def reset_to_default_pose(self):
-        self.robot.set_servo_angle(angle=self.robot_default_pos, speed=20, wait=True)
+        action = np.array([-0.143, 0.394, 0.140, -0.397, 0.917, 0.019, -0.007, 1])
+        if self.use_robot:
+            ## new default, higher position than before
+            msg = str(action.tolist()) + "\n"
+            self.action_sock.sendall(msg.encode())
+            ack = self.action_sock.recv(1024).decode('utf-8').strip()
+            if ack != "ACK":
+                print(f"⚠️ Reset NACK: {ack}")
+        
+        print("Reset to default pose:", action)
+        # self.robot.set_servo_angle(angle=self.robot_default_pos, speed=20, wait=True)
 
     def move_to_pose(self, pose, speed=1):
-        speed = speed * 100
-        speed = 60 # TODO: Change this in final results
-        rpy = quat2euler(pose[-4:])
-        offset = self._apply_gripper2hand_offset(pose[:3], rpy)
-        print("Our final control: ", offset)
-        self.robot.set_position(offset[0]*1000, offset[1]*1000, offset[2]*1000, rpy[0], rpy[1], rpy[2], speed=speed, wait=True, is_radian=True)
+        # speed = speed * 100
+        # speed = 60 # TODO: Change this in final results
+        # rpy = quat2euler(pose[-4:])
+        # offset = self._apply_gripper2hand_offset(pose[:3], rpy)
+        # print("Our final control: ", offset)
+        # self.robot.set_position(offset[0]*1000, offset[1]*1000, offset[2]*1000, rpy[0], rpy[1], rpy[2], speed=speed, wait=True, is_radian=True)
+        if self.use_robot:
+            print("Move to pose:", pose)
+            msg = str(pose.tolist()) + "\n"
+            self.action_sock.sendall(msg.encode())
+            ack = self.action_sock.recv(1024).decode().strip()
+            if ack != "ACK":
+                print(f"⚠️ Move NACK: {ack}")
         return 0
 
     def move_to_table_position(self, x, y, z, yaw=None, speed=1, wait=True):
-        speed = speed * 100
-        speed = 50 # TODO: Change this in final results
-        if yaw:
-            rpy = np.array([np.pi, 0, yaw])
-        else:
-            rpy = np.array([np.pi, 0, 0])
+        # speed = speed * 100
+        # speed = 50 # TODO: Change this in final results
+        # if yaw:
+        #     rpy = np.array([np.pi, 0, yaw])
+        # else:
+        #     rpy = np.array([np.pi, 0, 0])
 
-        position = np.array([x, y, z + Z_PUSHER])
-        offset = self._apply_gripper2hand_offset(position, rpy)
-        self.robot.set_position(offset[0]*1000, offset[1]*1000, offset[2]*1000, rpy[0], rpy[1], rpy[2], speed=speed, wait=wait, is_radian=True)
+        # position = np.array([x, y, z + Z_PUSHER])
+        # offset = self._apply_gripper2hand_offset(position, rpy)
+        
+        # self.robot.set_position(offset[0]*1000, offset[1]*1000, offset[2]*1000, rpy[0], rpy[1], rpy[2], speed=speed, wait=wait, is_radian=True)
+        # time.sleep(4.0)
+        print(f"Move to table position: x={x}, y={y}, z={z}, yaw={yaw}, speed={speed}")
+        
+        if self.use_robot:
+            if yaw is not None:
+                rpy = np.array([np.pi, 0, yaw])
+            else:
+                rpy = np.array([np.pi, 0, 0])
+            position = np.array([x, y, z])
+            # offset = self._apply_gripper2hand_offset(position, rpy)
+            msg = str(position.tolist() + rpy.tolist() + [speed]) + "\n"
+            self.action_sock.sendall(msg.encode())
+            time.sleep(4.0)
+            ack = self.action_sock.recv(1024).decode().strip()
+            if ack != "ACK":
+                print(f"⚠️ Move to table position NACK: {ack}")
+        # self.reset_to_default_pose()
         return 0
 
     def _apply_gripper2hand_offset(self, pose, rpy):

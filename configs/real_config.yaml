@@ -13,16 +13,16 @@ env:
 planner:
   log_dir: *log_dir
   prompt_fname: low_level_prompt
-  few_shot_prompt_dir: flat_examples
+  few_shot_prompt_dir: customcable
   target_pcd_file: None
   temperature: 0.0
   model: gpt-4o
   max_tokens: 1024
-  top_down_cam: 2
-  obs_x_center: 310
-  obs_y_center: 196
-  obs_x_scale: 0.6
-  obs_y_scale: 0.42
-  tracking_cam: 0
+  top_down_cam: 0
+  obs_x_center: 350
+  obs_y_center: 250
+  obs_x_scale: 0.29
+  obs_y_scale: 0.29
+  tracking_cam: 1
   close_loop: True
   use_retriever: True

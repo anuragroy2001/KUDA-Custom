@@ -1,0 +1,13 @@
+To form a "six above two" on the table, we need to straighten the rope horizontally to form a divider.
+
+Here is the Python function to specify the final positions of the keypoints on the rope:
+
+```python
+def keypoint_specification():
+    p1 = [20, 0, 0]   # Assuming P1 is 20 cm to the right of the center
+    p2 = [-20, 0, 0]  # Assuming P2 is 20 cm to the left of the center
+    
+    return p1, p2
+```
+
+This will place the keypoints in a straight line along the x-axis, effectively form a divider.

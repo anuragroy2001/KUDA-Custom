@@ -1,0 +1,15 @@
+To make the cable look like a smile, we need to bring up the extreme ends of the cable and bring down the center of the cable to form a "U" like shape.
+
+Here is the Python function to specify the final positions of the keypoints on the cable:
+
+```python
+def keypoint_specification():
+    p15 = [12, 6, 0]  # Move P15 to the top-right
+    p27 = [-12, 6, 0]  # Move P27 to the top-left
+    p11 = [ 2.5, -1, 0 ]  # Move P11 to the bottom 
+    p18 = [ -2.5, -1, 0 ]  # Move P18 to the bottom
+    
+    return p15, p27, p11, p18
+```
+
+This will place the keypoints in a "U" shape. The keypoints P15 and P27 are the extreme ends of the cable and therefore it is moved up, the keypoints P11 and P18 are closer to center and therefore it is moved down.
